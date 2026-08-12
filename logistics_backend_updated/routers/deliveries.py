@@ -437,6 +437,7 @@ def auto_arrive_at_destination_task(delivery_id: int):
 @router.post("/", response_model=DeliveryResponse, status_code=201)
 def create_delivery(
     payload: DeliveryCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("Admin", "Dispatcher", "Customer")),
 ):
@@ -564,6 +565,8 @@ def create_delivery(
         sender_pincode=payload.sender_pincode,
         sender_phone=payload.sender_phone,
         recipient_phone=payload.recipient_phone,
+        sender_email=payload.sender_email,
+        recipient_email=payload.recipient_email,
         package_description=payload.package_description,
         package_weight=payload.package_weight,
         package_dimensions=payload.package_dimensions,
@@ -588,6 +591,17 @@ def create_delivery(
     db.add(new_delivery)
     db.commit()
     db.refresh(new_delivery)
+
+    background_tasks.add_task(
+        send_delivery_creation_emails_task,
+        new_delivery.delivery_id,
+        new_delivery.tracking_number,
+        new_delivery.sender_name or "Sender",
+        new_delivery.recipient_name or "Receiver",
+        new_delivery.sender_email,
+        new_delivery.recipient_email
+    )
+
     return new_delivery
 
 
@@ -1211,3 +1225,191 @@ def delete_delivery(
     db.delete(delivery)
     db.commit()
     return None
+
+
+def send_delivery_creation_emails_task(
+    delivery_id: str,
+    tracking_number: str,
+    sender_name: str,
+    recipient_name: str,
+    sender_email: Optional[str],
+    recipient_email: Optional[str]
+):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    import os
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username = os.getenv("SMTP_USERNAME")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM_EMAIL", smtp_username)
+    tracking_base_url = os.getenv("TRACKING_URL", "http://localhost:4200")
+
+    if not smtp_username or not smtp_password:
+        logger.warning(
+            f"SMTP credentials not configured in .env. Skipping email sending for {delivery_id}. "
+            f"Sender Email: {sender_email}, Recipient Email: {recipient_email}"
+        )
+        return
+
+    subject = f"Delivery Order Created - {delivery_id}"
+    
+    html_body_template = """<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Delivery Order Created</title>
+  <style>
+    body {{
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .container {{
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid #e2e8f0;
+    }}
+    .header {{
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #ffffff;
+      padding: 32px;
+      text-align: center;
+    }}
+    .header h1 {{
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }}
+    .content {{
+      padding: 32px;
+      color: #334155;
+    }}
+    .content p {{
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      line-height: 24px;
+    }}
+    .details-card {{
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+      border: 1px solid #e2e8f0;
+    }}
+    .cta-button {{
+      display: inline-block;
+      background: #4f46e5;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      text-align: center;
+      margin: 24px 0 16px 0;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+    }}
+    .footer {{
+      background-color: #f8fafc;
+      padding: 24px;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+      border-top: 1px solid #e2e8f0;
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>LogisticsPro</h1>
+    </div>
+    <div class="content">
+      <p>Hello,</p>
+      <p>your delivery is created with the delivery number {delivery_id} and traching number {tracking_number} . you can track your delivery from and the link to direct login page so the customer can login and see the updates .</p>
+      
+      <div class="details-card">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 6px 0; font-size: 14px; color: #64748b; font-weight: 600;">Delivery Number:</td>
+            <td style="padding: 6px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">{delivery_id}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-size: 14px; color: #64748b; font-weight: 600;">Tracking Number:</td>
+            <td style="padding: 6px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">{tracking_number}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-size: 14px; color: #64748b; font-weight: 600;">Sender:</td>
+            <td style="padding: 6px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">{sender_name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-size: 14px; color: #64748b; font-weight: 600;">Recipient:</td>
+            <td style="padding: 6px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">{recipient_name}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="{tracking_url}" class="cta-button">Login and Track Shipment</a>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; 2026 LogisticsPro. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>"""
+
+    html_body = html_body_template.format(
+        delivery_id=delivery_id,
+        tracking_number=tracking_number,
+        sender_name=sender_name,
+        recipient_name=recipient_name,
+        tracking_url=tracking_base_url
+    )
+
+    emails_to_send = []
+    if sender_email and sender_email.strip():
+        emails_to_send.append(sender_email.strip())
+    if recipient_email and recipient_email.strip():
+        emails_to_send.append(recipient_email.strip())
+
+    if not emails_to_send:
+        logger.info(f"No sender or receiver email address provided for {delivery_id}. Skipping email dispatch.")
+        return
+
+    try:
+        server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+
+        for email in emails_to_send:
+            try:
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = subject
+                msg["From"] = smtp_from
+                msg["To"] = email
+                msg.attach(MIMEText(html_body, "html"))
+                
+                server.sendmail(smtp_from, email, msg.as_string())
+                logger.info(f"Successfully sent delivery creation email to {email}")
+            except Exception as inner_e:
+                logger.error(f"Failed to send email to {email}: {inner_e}")
+
+        server.quit()
+    except Exception as e:
+        logger.error(f"SMTP connection error during email dispatch for {delivery_id}: {e}")
+

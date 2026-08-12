@@ -38,6 +38,8 @@ class DeliveryCreate(BaseModel):
     sender_pincode: Optional[str] = None
     sender_phone: Optional[str] = None
     recipient_phone: Optional[str] = None
+    sender_email: Optional[str] = None
+    recipient_email: Optional[str] = None
     assigned_at: Optional[datetime] = None
     picked_up_at: Optional[datetime] = None
     in_transit_at: Optional[datetime] = None
@@ -180,6 +182,8 @@ class DeliveryResponse(BaseModel):
     sender_pincode: Optional[str] = None
     sender_phone: Optional[str] = None
     recipient_phone: Optional[str] = None
+    sender_email: Optional[str] = None
+    recipient_email: Optional[str] = None
     verification_pin: Optional[str] = None
     assigned_at: Optional[datetime] = None
     picked_up_at: Optional[datetime] = None

@@ -21,6 +21,24 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+def run_schema_migration():
+    with engine.begin() as conn:
+        try:
+            if not DATABASE_URL.startswith("sqlite"):
+                conn.execute(text("ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS sender_email VARCHAR;"))
+                conn.execute(text("ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS recipient_email VARCHAR;"))
+            else:
+                inspector = inspect(engine)
+                columns = [col['name'] for col in inspector.get_columns('deliveries')]
+                if 'sender_email' not in columns:
+                    conn.execute(text("ALTER TABLE deliveries ADD COLUMN sender_email TEXT;"))
+                if 'recipient_email' not in columns:
+                    conn.execute(text("ALTER TABLE deliveries ADD COLUMN recipient_email TEXT;"))
+        except Exception as e:
+            print(f"Migration warning: {e}")
+
+run_schema_migration()
+
 
 # ─────────────────────────────────────────────
 # ENUMS (Python-side only – stored as VARCHAR)
@@ -113,6 +131,8 @@ class Delivery(Base):
     payment_method     = Column(String, nullable=True)
     sender_phone       = Column(String, nullable=True)
     recipient_phone    = Column(String, nullable=True)
+    sender_email       = Column(String, nullable=True)
+    recipient_email    = Column(String, nullable=True)
     verification_pin   = Column(String, nullable=True)
     assigned_at        = Column(DateTime(timezone=True), nullable=True)
     picked_up_at       = Column(DateTime(timezone=True), nullable=True)
