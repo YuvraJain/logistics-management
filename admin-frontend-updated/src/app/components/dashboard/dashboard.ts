@@ -344,8 +344,7 @@ export class Dashboard implements OnInit {
 
   selectQuickRange(label: string): void {
     this.activeQuickSelect.set(label);
-    // Use May 14, 2024 as the reference today date to align with database seed dates
-    const today = new Date(2024, 4, 14);
+    const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     let start = new Date(today);
