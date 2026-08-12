@@ -115,17 +115,7 @@
         <span class="metric-label">{{ m.label }}</span>
         <div class="metric-value-row">
           <span class="metric-value">{{ m.value }}</span>
-          <span class="trend-badge" [ngClass]="{'positive': m.trendPositive, 'negative': !m.trendPositive}">
-            <svg class="trend-arrow" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" *ngIf="m.trendPositive">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-            <svg class="trend-arrow" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" *ngIf="!m.trendPositive">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-            {{ m.trend }}
-          </span>
         </div>
-        <span class="metric-comparison">{{ m.comparison }}</span>
       </div>
     </div>
 
@@ -149,12 +139,7 @@
         <div class="column-chart-body">
           <!-- Y Axis Labels -->
           <div class="chart-y-axis">
-            <div class="y-label">2.5K</div>
-            <div class="y-label">2K</div>
-            <div class="y-label">1.5K</div>
-            <div class="y-label">1K</div>
-            <div class="y-label">500</div>
-            <div class="y-label">0</div>
+            <div class="y-label" *ngFor="let label of yAxisLabels()">{{ label }}</div>
           </div>
 
           <!-- Y Axis Grid Lines -->
@@ -216,7 +201,7 @@
                 <span class="dot" [style.background-color]="seg.color"></span>
                 <span class="role-name">{{ seg.label }}</span>
               </div>
-              <div class="legend-value">{{ seg.count | number }} ({{ seg.percent }}%)</div>
+              <div class="legend-value">{{ seg.count | number }}</div>
             </div>
           </div>
         </div>
