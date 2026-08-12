@@ -52,10 +52,7 @@ export class EarningsReportComponent implements OnInit, OnDestroy {
       };
 
       this.transactions = delivered.map(d => {
-        const pCoords = this.deliveryService.getCoords(d.pickup_address);
-        const dCoords = this.deliveryService.getCoords(d.drop_address);
-        const dist = this.deliveryService.calculateDistance(pCoords[0], pCoords[1], dCoords[0], dCoords[1]);
-        const earnVal = this.deliveryService.getEarnings(dist);
+        const earnVal = this.deliveryService.getPaymentAmount(d);
 
         const dDate = new Date(d.created_at);
 

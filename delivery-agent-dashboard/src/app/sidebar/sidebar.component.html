@@ -26,9 +26,9 @@
       <mat-icon>work_history</mat-icon>
       <span *ngIf="!isCollapsed">Past Jobs</span>
     </a>
-    <a class="nav-item" [class.active]="currentView === 'earnings'" href="#" (click)="selectView('earnings'); $event.preventDefault()" title="Earnings Report">
+    <a class="nav-item" [class.active]="currentView === 'earnings'" href="#" (click)="selectView('earnings'); $event.preventDefault()" title="Payments Report">
       <mat-icon>bar_chart</mat-icon>
-      <span *ngIf="!isCollapsed">Earnings Report</span>
+      <span *ngIf="!isCollapsed">Payments Report</span>
     </a>
     <a class="nav-item" [class.active]="currentView === 'profile'" href="#" (click)="selectView('profile'); $event.preventDefault()" title="Profile">
       <mat-icon>person</mat-icon>

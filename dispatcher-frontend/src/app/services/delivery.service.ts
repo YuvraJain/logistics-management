@@ -25,6 +25,8 @@ export interface DeliveryCreate {
   sender_address?: string | null;
   sender_pincode?: string | null;
   sender_phone?: string | null;
+  sender_email?: string | null;
+  recipient_email?: string | null;
   verification_pin?: string | null;
   assigned_at?: string | null;
   picked_up_at?: string | null;

@@ -65,3 +65,65 @@ def get_dispatcher_stats(db: Session = Depends(get_db)):
         "active_agents":     active_agents,
     }
 
+from datetime import datetime, timedelta, timezone
+
+@router.get("/overview", dependencies=[Depends(require_role("Admin"))])
+def get_overview_stats(db: Session = Depends(get_db)):
+    """Return live financial and usage overview for Admin dashboard."""
+    now = datetime.now(timezone.utc)
+    seven_days_ago = now - timedelta(days=7)
+
+    # 1. New users created in the last 7 days
+    new_users_count = db.query(User).filter(User.created_at >= seven_days_ago).count()
+
+    # 2. New deliveries in the last 7 days
+    new_deliveries_count = db.query(Delivery).filter(Delivery.created_at >= seven_days_ago).count()
+
+    # 3. How many times the customer used the system (total deliveries count)
+    total_customer_bookings = db.query(Delivery).count()
+
+    # Get all deliveries created in the last 7 days to calculate daywise stats
+    deliveries_last_week = db.query(Delivery).filter(Delivery.created_at >= seven_days_ago).all()
+
+    # Initialize daywise dicts for the last 7 days (from 6 days ago until today)
+    daywise_payments = {}
+    daywise_bookings = {}
+
+    for i in range(7):
+        day_dt = now - timedelta(days=i)
+        day_name = day_dt.strftime("%a") # e.g. "Mon"
+        daywise_payments[day_name] = 0.0
+        daywise_bookings[day_name] = 0
+
+    for d in deliveries_last_week:
+        if d.created_at:
+            day_name = d.created_at.strftime("%a")
+            if day_name in daywise_bookings:
+                daywise_bookings[day_name] += 1
+                
+                # Calculate actual payment collected (COD amount + delivery charge if Receiver Pays)
+                payment_amount = 0.0
+                if d.payment_method == "COD":
+                    payment_amount += (d.cod_amount or 0.0)
+                if d.payment_responsibility == "Receiver":
+                    payment_amount += (d.delivery_charge or 0.0)
+                
+                daywise_payments[day_name] += payment_amount
+
+    # Convert to list ordered from oldest day to today
+    ordered_days = []
+    for i in reversed(range(7)):
+        day_dt = now - timedelta(days=i)
+        ordered_days.append(day_dt.strftime("%a"))
+
+    daywise_payments_list = [{"day": day, "amount": daywise_payments.get(day, 0.0)} for day in ordered_days]
+    daywise_bookings_list = [{"day": day, "count": daywise_bookings.get(day, 0)} for day in ordered_days]
+
+    return {
+        "new_users_count": new_users_count,
+        "new_deliveries_count": new_deliveries_count,
+        "total_customer_bookings": total_customer_bookings,
+        "daywise_payments": daywise_payments_list,
+        "daywise_bookings": daywise_bookings_list
+    }
+

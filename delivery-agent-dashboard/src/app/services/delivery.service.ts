@@ -161,8 +161,8 @@ export class DeliveryService {
     return this.http.post<any>(`${this.apiUrl}/${id}/request-otp`, {});
   }
 
-  verifyOtp(id: number, pin: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${id}/verify-otp`, { pin });
+  verifyOtp(id: number, pin: string, status?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/verify-otp`, { pin, status });
   }
 
   optimizeRoute(id: number): Observable<any> {

@@ -45,9 +45,9 @@ export class DeliveryRequestComponent implements OnInit, OnDestroy {
           pCoords[0],
           pCoords[1],
           dCoords[0],
-          dCoords[1],
+          dCoords[1]
         );
-        const earnVal = this.deliveryService.getEarnings(dist);
+        const earnVal = this.deliveryService.getPaymentAmount(d);
 
         this.deliveryIdNum = d.id;
         this.request = {

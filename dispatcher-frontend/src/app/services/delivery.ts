@@ -80,7 +80,9 @@ export interface DeliveryCreate {
   sender_address?: string | null;
   sender_pincode?: string | null;
   sender_phone?: string | null;
+  sender_email?: string | null;
   recipient_phone?: string | null;
+  recipient_email?: string | null;
   package_description?: string | null;
 
   package_weight?: string | null;

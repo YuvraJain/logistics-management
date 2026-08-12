@@ -510,7 +510,10 @@ export class ActiveJobComponent implements OnInit, AfterViewInit, OnDestroy {
     
     if (isIntercity) {
       if (isSourceLeg) {
-        if (currentStatus === 'Assigned') nextStatus = 'Picked Up';
+        if (currentStatus === 'Assigned') {
+          triggersOtp = true;
+          nextStatus = 'Picked Up';
+        }
         else if (currentStatus === 'Picked Up') nextStatus = 'Arrived at Origin Hub';
       } else {
         // Destination leg
@@ -522,7 +525,10 @@ export class ActiveJobComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       // Local same-city
-      if (currentStatus === 'Assigned') nextStatus = 'Picked Up';
+      if (currentStatus === 'Assigned') {
+        triggersOtp = true;
+        nextStatus = 'Picked Up';
+      }
       else if (currentStatus === 'Picked Up') nextStatus = 'In Transit';
       else if (currentStatus === 'In Transit') {
         triggersOtp = true;
@@ -562,14 +568,20 @@ export class ActiveJobComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.activeJobRaw || !this.otpPin.trim()) return;
     this.isVerifyingOtp = true;
     this.otpError = '';
-    this.deliveryService.verifyOtp(this.activeJobRaw.id, this.otpPin).subscribe({
+    
+    const currentStatus = this.activeJobRaw.status;
+    const targetStatus = currentStatus === 'Assigned' ? 'Picked Up' : 'Delivered';
+
+    this.deliveryService.verifyOtp(this.activeJobRaw.id, this.otpPin, targetStatus).subscribe({
       next: () => {
         this.isVerifyingOtp = false;
         this.showOtpModal = false;
         if (this.activeJobRaw) {
-          this.activeJobRaw.status = 'Delivered';
+          this.activeJobRaw.status = targetStatus;
         }
-        this.hasActiveJob = false;
+        if (targetStatus === 'Delivered') {
+          this.hasActiveJob = false;
+        }
         this.deliveryService.loadAgentDeliveries();
         this.cdr.detectChanges();
       },

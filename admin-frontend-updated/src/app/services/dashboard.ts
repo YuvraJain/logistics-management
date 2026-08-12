@@ -10,6 +10,14 @@ export interface DashboardStats {
   users_by_role: Record<string, number>;
 }
 
+export interface OverviewStats {
+  new_users_count: number;
+  new_deliveries_count: number;
+  total_customer_bookings: number;
+  daywise_payments: Array<{ day: string; amount: number }>;
+  daywise_bookings: Array<{ day: string; count: number }>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
@@ -17,5 +25,9 @@ export class DashboardService {
 
   getStats(): Observable<DashboardStats> {
     return this.http.get<DashboardStats>(`${this.apiUrl}/api/dashboard/stats`);
+  }
+
+  getOverviewStats(): Observable<OverviewStats> {
+    return this.http.get<OverviewStats>(`${this.apiUrl}/api/dashboard/overview`);
   }
 }

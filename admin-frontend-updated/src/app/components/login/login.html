@@ -1,30 +1,98 @@
 <div class="login-page">
   <div class="login-card">
     
-    <!-- Normal Login Form Content (Always visible) -->
-    <div class="login-form-content">
-      <div class="login-header">
-        <h1>LogisticsPro</h1>
-        <p>Sign in to your account</p>
+    <!-- Normal Login Form Content -->
+    <div class="login-form-content" style="max-height: 90vh; overflow-y: auto;">
+      
+      <!-- SUCCESS BANNER -->
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #065f46; font-size: 13px; text-align: center; font-weight: 500;" *ngIf="signupSuccess()">
+        {{ signupSuccess() }}
       </div>
 
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <label for="username">Username or Email</label>
-          <input id="username" type="text" formControlName="username" class="form-control" [class.is-invalid]="f['username'].touched && f['username'].invalid">
+      <!-- SIGN IN MODE -->
+      <div *ngIf="!isRegisterMode()">
+        <div class="login-header">
+          <h1>LogisticsPro</h1>
+          <p>Sign in to your account</p>
         </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input id="password" type="password" formControlName="password" class="form-control" [class.is-invalid]="f['password'].touched && f['password'].invalid">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label for="username">Username or Email</label>
+            <input id="username" type="text" formControlName="username" class="form-control" [class.is-invalid]="f['username'].touched && f['username'].invalid">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input id="password" type="password" formControlName="password" class="form-control" [class.is-invalid]="f['password'].touched && f['password'].invalid">
+          </div>
+
+          <div class="api-error" *ngIf="loginError()">{{ loginError() }}</div>
+
+          <button type="submit" class="btn btn-primary login-btn" [disabled]="isSubmitting() || isRedirecting()">
+            {{ isRedirecting() ? 'Redirecting...' : (isSubmitting() ? 'Signing in...' : 'Sign In') }}
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 16px; font-size: 13px; color: #64748b;">
+          Don't have an account? 
+          <a href="#" (click)="toggleRegisterMode(); $event.preventDefault()" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Register Here</a>
+        </div>
+      </div>
+
+      <!-- SIGN UP MODE -->
+      <div *ngIf="isRegisterMode()">
+        <div class="login-header">
+          <h1>Register Account</h1>
+          <p>Create a new Customer account</p>
         </div>
 
-        <div class="api-error" *ngIf="loginError()">{{ loginError() }}</div>
+        <form [formGroup]="signupForm" (ngSubmit)="onRegisterSubmit()">
+          <div class="form-group">
+            <label for="fullname">Full Name</label>
+            <input id="fullname" type="text" formControlName="fullname" class="form-control" [class.is-invalid]="sf['fullname'].touched && sf['fullname'].invalid">
+          </div>
 
-        <button type="submit" class="btn btn-primary login-btn" [disabled]="isSubmitting() || isRedirecting()">
-          {{ isRedirecting() ? 'Redirecting...' : (isSubmitting() ? 'Signing in...' : 'Sign In') }}
-        </button>
-      </form>
+          <div class="form-group">
+            <label for="reg_username">Username</label>
+            <input id="reg_username" type="text" formControlName="username" class="form-control" [class.is-invalid]="sf['username'].touched && sf['username'].invalid">
+          </div>
+
+          <div class="form-group">
+            <label for="reg_email">Email Address</label>
+            <input id="reg_email" type="email" formControlName="email" class="form-control" [class.is-invalid]="sf['email'].touched && sf['email'].invalid">
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="reg_phone">Phone Number</label>
+              <input id="reg_phone" type="text" formControlName="phone_number" class="form-control" [class.is-invalid]="sf['phone_number'].touched && sf['phone_number'].invalid">
+            </div>
+
+            <div class="form-group">
+              <label for="reg_city">City</label>
+              <input id="reg_city" type="text" formControlName="city" class="form-control" [class.is-invalid]="sf['city'].touched && sf['city'].invalid">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg_password">Password</label>
+            <input id="reg_password" type="password" formControlName="password" class="form-control" [class.is-invalid]="sf['password'].touched && sf['password'].invalid">
+          </div>
+
+          <div class="api-error" *ngIf="loginError()">{{ loginError() }}</div>
+
+          <button type="submit" class="btn btn-primary login-btn" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Creating account...' : 'Create Account' }}
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 16px; font-size: 13px; color: #64748b;">
+          Already have an account? 
+          <a href="#" (click)="toggleRegisterMode(); $event.preventDefault()" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Login Here</a>
+        </div>
+      </div>
+
     </div>
 
     <!-- Creative Truck Loading Animation Scene (Rendered in the white space) -->

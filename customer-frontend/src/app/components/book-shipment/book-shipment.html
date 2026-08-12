@@ -286,8 +286,17 @@
 
           <div class="form-row-2">
             <div class="form-group">
-              <label for="packageWeight">Actual Weight (kg) *</label>
-              <input type="number" step="0.1" id="packageWeight" [(ngModel)]="form.packageWeight" (ngModelChange)="recalculatePrice()" name="packageWeight" placeholder="e.g. 3.0" required />
+              <label for="packageWeight">Weight Category *</label>
+              <select id="packageWeight" [(ngModel)]="form.packageWeight" (ngModelChange)="recalculatePrice()" name="packageWeight" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 14px; background: white; color: #1e293b;" required>
+                <option value="" disabled selected>Select Weight Range</option>
+                <option [ngValue]="1">0 - 1 kg (₹60 base)</option>
+                <option [ngValue]="5">1 - 5 kg (₹120 base)</option>
+                <option [ngValue]="10">5 - 10 kg (₹180 base)</option>
+                <option [ngValue]="15">10 - 15 kg (₹240 base)</option>
+                <option [ngValue]="20">15 - 20 kg (₹300 base)</option>
+                <option [ngValue]="25">20 - 25 kg (₹360 base)</option>
+                <option [ngValue]="30">Above 25 kg (₹420 base)</option>
+              </select>
               @if (errors['packageWeight']) { <span class="field-error">{{ errors['packageWeight'] }}</span> }
             </div>
 

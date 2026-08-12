@@ -361,3 +361,68 @@ def debug_cities(db: Session = Depends(get_db)):
     users = db.query(User).all()
     return [{"id": u.id, "fullname": u.fullname, "username": u.username, "email": u.email, "role": u.role.name if u.role else None, "city": u.city, "status": u.status} for u in users]
 
+
+class SignupRequest(BaseModel):
+    fullname: str = Field(..., min_length=2, max_length=100)
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    phone_number: str = Field(..., min_length=7, max_length=15)
+    city: str = Field(..., min_length=2, max_length=100)
+    password: str = Field(..., min_length=6)
+
+    @field_validator("fullname")
+    @classmethod
+    def validate_full_name(cls, v):
+        v = v.strip()
+        if not re.match(r"^[A-Za-z\s]+$", v):
+            raise ValueError("Full name must contain only letters and spaces.")
+        return v
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        v = v.strip()
+        if not re.match(r"^\w+$", v):
+            raise ValueError("Username must contain only letters, numbers, and underscores.")
+        return v.lower()
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, v):
+        v = v.strip()
+        if not re.match(r"^[\d\s\-+()]{7,15}$", v):
+            raise ValueError("Phone number must be 7-15 characters.")
+        return v
+
+@router.post("/signup", status_code=201)
+def signup(payload: SignupRequest, db: Session = Depends(get_db)):
+    existing_username = db.query(User).filter(User.username == payload.username).first()
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    existing_email = db.query(User).filter(User.email == payload.email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    from database import Role
+    cust_role = db.query(Role).filter(Role.name == "Customer").first()
+    role_id = cust_role.id if cust_role else 4
+
+    hashed_pw = hash_password(payload.password)
+
+    new_user = User(
+        fullname=payload.fullname,
+        username=payload.username,
+        email=payload.email,
+        phone_number=payload.phone_number,
+        city=payload.city,
+        role_id=role_id,
+        hashed_password=hashed_pw,
+        status="Active"
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "Account created successfully.", "status": "success"}
+

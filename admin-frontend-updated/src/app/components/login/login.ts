@@ -21,11 +21,30 @@ export class Login {
   loginError = signal<string | null>(null);
   isRedirecting = signal(false);
   isAnimating = signal(false);
+  isRegisterMode = signal(false);
+  signupSuccess = signal<string | null>(null);
 
   loginForm = this.fb.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
     password: ['', [Validators.required, Validators.minLength(6)]]
   });
+
+  signupForm = this.fb.group({
+    fullname: ['', [Validators.required, Validators.minLength(2)]],
+    username: ['', [Validators.required, Validators.minLength(3)]],
+    email: ['', [Validators.required, Validators.email]],
+    phone_number: ['', [Validators.required, Validators.minLength(7)]],
+    city: ['', [Validators.required, Validators.minLength(2)]],
+    password: ['', [Validators.required, Validators.minLength(6)]]
+  });
+
+  toggleRegisterMode(): void {
+    this.isRegisterMode.set(!this.isRegisterMode());
+    this.loginError.set(null);
+    this.signupSuccess.set(null);
+    this.signupForm.reset();
+    this.loginForm.reset();
+  }
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
@@ -92,8 +111,37 @@ export class Login {
     });
   }
 
+  onRegisterSubmit(): void {
+    if (this.signupForm.invalid) {
+      this.signupForm.markAllAsTouched();
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.loginError.set(null);
+    this.signupSuccess.set(null);
+
+    const payload = this.signupForm.value;
+    this.authService.signup(payload).subscribe({
+      next: (res) => {
+        this.isSubmitting.set(false);
+        this.signupSuccess.set('Account created successfully! Please sign in using your credentials.');
+        this.isRegisterMode.set(false);
+        this.signupForm.reset();
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.loginError.set(err?.error?.detail || 'Failed to create account. Please check inputs.');
+      }
+    });
+  }
+
   get f() {
     return this.loginForm.controls;
+  }
+
+  get sf() {
+    return this.signupForm.controls;
   }
 }
 

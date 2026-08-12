@@ -975,6 +975,7 @@ def patch_delivery(
 
 class VerifyOtpRequest(BaseModel):
     pin: str
+    status: Optional[str] = None
 
 @router.post("/{delivery_id}/request-otp", status_code=200)
 def request_otp(
@@ -1010,21 +1011,23 @@ def verify_otp(
     if delivery.verification_pin != payload.pin.strip():
         raise HTTPException(status_code=400, detail="Invalid verification PIN. Access denied.")
 
-    # Verification successful! Update status to Delivered and clear PIN
-    delivery.status = "Delivered"
+    # Verification successful! Update status to target status and clear PIN
+    target_status = payload.status or "Delivered"
+    delivery.status = target_status
     delivery.verification_pin = None
-    update_status_timestamps(delivery, "Delivered")
+    update_status_timestamps(delivery, target_status)
 
-    # Deactivate agent if flagged for deactivation
-    agent_user = None
-    if delivery.agent_id:
-        agent_user = db.query(User).filter(User.id == delivery.agent_id).first()
-    if not agent_user and delivery.agent:
-        agent_user = db.query(User).filter(User.fullname == delivery.agent, User.role_id == 2).first()
+    # Deactivate agent if flagged for deactivation and status is Delivered
+    if target_status == "Delivered":
+        agent_user = None
+        if delivery.agent_id:
+            agent_user = db.query(User).filter(User.id == delivery.agent_id).first()
+        if not agent_user and delivery.agent:
+            agent_user = db.query(User).filter(User.fullname == delivery.agent, User.role_id == 2).first()
 
-    if agent_user and getattr(agent_user, "deactivate_after_delivery", False):
-        agent_user.status = "Inactive"
-        agent_user.deactivate_after_delivery = False
+        if agent_user and getattr(agent_user, "deactivate_after_delivery", False):
+            agent_user.status = "Inactive"
+            agent_user.deactivate_after_delivery = False
 
     db.commit()
     db.refresh(delivery)

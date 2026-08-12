@@ -38,6 +38,7 @@ export class Sidebar implements OnInit {
   searchQuery = signal('');
 
   private navItems: NavItem[] = [
+    { label: 'Overview', route: '/overview', icon: 'overview', roles: ['Admin'] },
     { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },
     { label: 'Deliveries', route: '/deliveries', icon: 'deliveries', roles: ['Admin', 'Dispatcher'] },
     { label: 'Agents & Workloads', route: '/agents', icon: 'agents', roles: ['Admin'] },

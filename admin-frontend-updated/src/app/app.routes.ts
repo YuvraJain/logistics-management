@@ -13,6 +13,7 @@ import { Agents } from './components/agents/agents';
 import { Customers } from './components/customers/customers';
 import { ProfileComponent } from './components/profile/profile';
 import { LogisticsAi } from './components/logistics-ai/logistics-ai';
+import { OverviewComponent } from './components/overview/overview';
 
 export const routes: Routes = [
   { path: 'login', component: Login, canActivate: [loginGuard] },
@@ -23,6 +24,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
+      { path: 'overview', component: OverviewComponent, canActivate: [adminGuard] },
       { path: 'deliveries', component: Deliveries, canActivate: [roleGuard(['Admin', 'Dispatcher'])] },
       { path: 'agents', component: Agents, canActivate: [adminGuard] },
       { path: 'customers', component: Customers, canActivate: [adminGuard] },

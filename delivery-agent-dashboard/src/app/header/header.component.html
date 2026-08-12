@@ -15,8 +15,12 @@
 
   <div class="header-right" style="display: flex; align-items: center;">
     <!-- Logistics AI Assistant Sparkles Button -->
-    <button mat-icon-button class="ai-chat-btn" aria-label="Logistics AI Assistant" (click)="openAiChat()" style="color: #6366f1; margin-right: 8px;">
-      <mat-icon>smart_toy</mat-icon>
+    <button mat-icon-button class="ai-chat-btn" aria-label="Logistics AI Assistant" (click)="openAiChat()" style="color: #6366f1; margin-right: 8px; display: inline-flex; align-items: center; justify-content: center;">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="vertical-align: middle;">
+        <path d="M12 2v3M12 2a1 1 0 100 2 1 1 0 000-2" />
+        <rect x="5" y="7" width="14" height="12" rx="2" ry="2" />
+        <path d="M9 11v2M15 11v2M9 15h6M3 13h2M19 13h2" />
+      </svg>
     </button>
 
     <div class="notification-wrapper">

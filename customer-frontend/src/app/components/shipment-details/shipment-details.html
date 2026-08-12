@@ -73,17 +73,33 @@
           </div>
         </div>
 
-        <!-- Delivery Verification PIN (OTP) -->
-        @if (shipment.verification_pin && getUserRoleInDelivery(shipment) === 'Receiver') {
+        <!-- Pickup Verification PIN (OTP) for Sender -->
+        @if (shipment.verification_pin && getUserRoleInDelivery(shipment) === 'Sender' && (shipment.status === 'Assigned' || shipment.status === 'Pending')) {
           <div class="otp-card" style="margin-top: 16px; padding: 14px; background: #e0e7ff; border: 1px solid #c7d2fe; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <i class="pi pi-shield" style="font-size: 20px; color: #4338ca;"></i>
               <div>
-                <h5 style="margin: 0 0 2px 0; font-family: 'Outfit', sans-serif; font-size: 13px; color: #1e1b4b; text-align: left;">Delivery Verification PIN</h5>
-                <p style="margin: 0; font-size: 11px; color: #4338ca; text-align: left;">Share this PIN with the agent to verify delivery.</p>
+                <h5 style="margin: 0 0 2px 0; font-family: 'Outfit', sans-serif; font-size: 13px; color: #1e1b4b; text-align: left;">Pickup Verification PIN</h5>
+                <p style="margin: 0; font-size: 11px; color: #4338ca; text-align: left;">Share this PIN with the agent to verify pickup.</p>
               </div>
             </div>
             <div style="font-size: 20px; font-weight: 800; color: #4338ca; letter-spacing: 2px; padding: 6px 12px; background: white; border-radius: 8px; border: 1px dashed #4338ca;">
+              {{ shipment.verification_pin }}
+            </div>
+          </div>
+        }
+
+        <!-- Delivery Verification PIN (OTP) for Receiver -->
+        @if (shipment.verification_pin && getUserRoleInDelivery(shipment) === 'Receiver' && (shipment.status === 'In Transit' || shipment.status === 'Out for Delivery' || shipment.status === 'Picked Up')) {
+          <div class="otp-card" style="margin-top: 16px; padding: 14px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="pi pi-shield" style="font-size: 20px; color: #065f46;"></i>
+              <div>
+                <h5 style="margin: 0 0 2px 0; font-family: 'Outfit', sans-serif; font-size: 13px; color: #065f46; text-align: left;">Delivery Verification PIN</h5>
+                <p style="margin: 0; font-size: 11px; color: #065f46; text-align: left;">Share this PIN with the agent to verify delivery.</p>
+              </div>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; color: #065f46; letter-spacing: 2px; padding: 6px 12px; background: white; border-radius: 8px; border: 1px dashed #065f46;">
               {{ shipment.verification_pin }}
             </div>
           </div>
