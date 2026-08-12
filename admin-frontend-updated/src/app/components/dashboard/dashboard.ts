@@ -396,19 +396,14 @@ export class Dashboard implements OnInit {
     const start = this.selectedRange().start;
     const end = this.selectedRange().end;
 
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    // Filter deliveries by actual created_at date
+    const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0).getTime();
+    const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999).getTime();
 
-    // Distribute mock deliveries across the selected range
-    const deliveries = this.rawDeliveries.map((d, index) => {
-      const dateOffset = index % diffDays;
-      const mockDate = new Date(start);
-      mockDate.setDate(start.getDate() + dateOffset);
-      mockDate.setHours(9 + (index % 8), 0, 0, 0);
-      return {
-        ...d,
-        created_at: mockDate.toISOString(),
-      };
+    const deliveries = this.rawDeliveries.filter((d) => {
+      if (!d.created_at) return false;
+      const dTime = new Date(d.created_at).getTime();
+      return dTime >= startTime && dTime <= endTime;
     });
 
     const totalUsers = this.rawUsers.length;
@@ -424,8 +419,15 @@ export class Dashboard implements OnInit {
     ).length;
     const delayedDeliveries = deliveries.filter((d) => d.status === 'Delayed').length;
 
-    const paidCount = deliveries.filter((d) => d.payment_status === 'Paid').length;
-    const totalRevenue = paidCount * 2000;
+    let totalRevenue = 0;
+    for (const d of deliveries) {
+      if (d.payment_method === 'COD') {
+        totalRevenue += (d.cod_amount || 0);
+      }
+      if (d.payment_responsibility === 'Receiver') {
+        totalRevenue += (d.delivery_charge || 0);
+      }
+    }
 
     // Top Cards
     this.metrics.set([

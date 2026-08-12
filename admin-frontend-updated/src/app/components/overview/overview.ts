@@ -22,6 +22,18 @@ export class OverviewComponent implements OnInit {
   daywisePayments = signal<Array<{ day: string; amount: number }>>([]);
   daywiseBookings = signal<Array<{ day: string; count: number }>>([]);
 
+  // Data lists for overlay modals
+  newUsersList = signal<any[]>([]);
+  newDeliveriesList = signal<any[]>([]);
+  allDeliveriesList = signal<any[]>([]);
+  customerSummary = signal<any[]>([]);
+
+  // Modal State Signals
+  showModal = signal(false);
+  modalTitle = signal('');
+  modalType = signal<'users' | 'deliveries'>('users');
+  modalData = signal<any[]>([]);
+
   // Max calculations for graph scaling
   maxPaymentAmount = computed(() => {
     const vals = this.daywisePayments().map(p => p.amount);
@@ -39,7 +51,7 @@ export class OverviewComponent implements OnInit {
     if (bookings.length === 0) return '';
     const max = this.maxBookingCount();
     
-    // Width: 600, Height: 200. Margins: left=40, right=20, top=20, bottom=40
+    // Width: 600, Height: 200. Margins: left=50, right=30, top=30, bottom=40
     const w = 600;
     const h = 200;
     const paddingLeft = 50;
@@ -113,6 +125,10 @@ export class OverviewComponent implements OnInit {
         this.newUsersCount.set(data.new_users_count);
         this.newDeliveriesCount.set(data.new_deliveries_count);
         this.totalCustomerBookings.set(data.total_customer_bookings);
+        this.newUsersList.set(data.new_users_list || []);
+        this.newDeliveriesList.set(data.new_deliveries_list || []);
+        this.allDeliveriesList.set(data.all_deliveries_list || []);
+        this.customerSummary.set(data.customer_summary || []);
         this.daywisePayments.set(data.daywise_payments);
         this.daywiseBookings.set(data.daywise_bookings);
         this.isLoading.set(false);
@@ -128,5 +144,30 @@ export class OverviewComponent implements OnInit {
   getPaymentBarHeight(amount: number): number {
     const max = this.maxPaymentAmount();
     return Math.max(5, Math.round((amount / max) * 100));
+  }
+
+  openUsersModal(): void {
+    this.modalTitle.set('New Registered Users (Last 7 Days)');
+    this.modalType.set('users');
+    this.modalData.set(this.newUsersList());
+    this.showModal.set(true);
+  }
+
+  openNewDeliveriesModal(): void {
+    this.modalTitle.set('New Shipments Booked (Last 7 Days)');
+    this.modalType.set('deliveries');
+    this.modalData.set(this.newDeliveriesList());
+    this.showModal.set(true);
+  }
+
+  openAllBookingsModal(): void {
+    this.modalTitle.set('Total Customer Bookings');
+    this.modalType.set('deliveries');
+    this.modalData.set(this.allDeliveriesList());
+    this.showModal.set(true);
+  }
+
+  closeModal(): void {
+    this.showModal.set(false);
   }
 }

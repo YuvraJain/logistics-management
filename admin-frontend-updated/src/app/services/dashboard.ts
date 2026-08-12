@@ -14,6 +14,10 @@ export interface OverviewStats {
   new_users_count: number;
   new_deliveries_count: number;
   total_customer_bookings: number;
+  new_users_list: any[];
+  new_deliveries_list: any[];
+  all_deliveries_list: any[];
+  customer_summary: any[];
   daywise_payments: Array<{ day: string; amount: number }>;
   daywise_bookings: Array<{ day: string; count: number }>;
 }

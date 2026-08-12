@@ -74,16 +74,70 @@ def get_overview_stats(db: Session = Depends(get_db)):
     seven_days_ago = now - timedelta(days=7)
 
     # 1. New users created in the last 7 days
-    new_users_count = db.query(User).filter(User.created_at >= seven_days_ago).count()
+    new_users = db.query(User).filter(User.created_at >= seven_days_ago).all()
+    new_users_list = [
+        {
+            "id": u.id,
+            "fullname": u.fullname,
+            "username": u.username,
+            "email": u.email,
+            "phone_number": u.phone_number,
+            "city": u.city,
+            "created_at": u.created_at.isoformat() if u.created_at else None
+        } for u in new_users
+    ]
 
     # 2. New deliveries in the last 7 days
-    new_deliveries_count = db.query(Delivery).filter(Delivery.created_at >= seven_days_ago).count()
+    new_deliveries = db.query(Delivery).filter(Delivery.created_at >= seven_days_ago).all()
+    new_deliveries_list = [
+        {
+            "id": d.id,
+            "delivery_id": d.delivery_id,
+            "customer_name": d.customer_name,
+            "customer_phone": d.customer_phone,
+            "sender_name": d.sender_name,
+            "recipient_name": d.recipient_name,
+            "status": d.status,
+            "created_at": d.created_at.isoformat() if d.created_at else None
+        } for d in new_deliveries
+    ]
 
     # 3. How many times the customer used the system (total deliveries count)
-    total_customer_bookings = db.query(Delivery).count()
+    all_deliveries = db.query(Delivery).all()
+    all_deliveries_list = [
+        {
+            "id": d.id,
+            "delivery_id": d.delivery_id,
+            "customer_name": d.customer_name,
+            "customer_phone": d.customer_phone,
+            "sender_name": d.sender_name,
+            "recipient_name": d.recipient_name,
+            "status": d.status,
+            "created_at": d.created_at.isoformat() if d.created_at else None
+        } for d in all_deliveries
+    ]
 
-    # Get all deliveries created in the last 7 days to calculate daywise stats
-    deliveries_last_week = db.query(Delivery).filter(Delivery.created_at >= seven_days_ago).all()
+    # 4. Group by customer to calculate total bookings and payments
+    customer_summary = {}
+    for d in all_deliveries:
+        cust = d.customer_name or d.sender_name or "Unknown Customer"
+        if cust not in customer_summary:
+            customer_summary[cust] = {
+                "name": cust,
+                "bookings_count": 0,
+                "total_payment": 0.0
+            }
+        customer_summary[cust]["bookings_count"] += 1
+        
+        # Calculate payment collected
+        payment_amount = 0.0
+        if d.payment_method == "COD":
+            payment_amount += (d.cod_amount or 0.0)
+        if d.payment_responsibility == "Receiver":
+            payment_amount += (d.delivery_charge or 0.0)
+        customer_summary[cust]["total_payment"] += payment_amount
+
+    customer_summary_list = sorted(customer_summary.values(), key=lambda x: x["bookings_count"], reverse=True)
 
     # Initialize daywise dicts for the last 7 days (from 6 days ago until today)
     daywise_payments = {}
@@ -95,7 +149,7 @@ def get_overview_stats(db: Session = Depends(get_db)):
         daywise_payments[day_name] = 0.0
         daywise_bookings[day_name] = 0
 
-    for d in deliveries_last_week:
+    for d in new_deliveries:
         if d.created_at:
             day_name = d.created_at.strftime("%a")
             if day_name in daywise_bookings:
@@ -120,9 +174,13 @@ def get_overview_stats(db: Session = Depends(get_db)):
     daywise_bookings_list = [{"day": day, "count": daywise_bookings.get(day, 0)} for day in ordered_days]
 
     return {
-        "new_users_count": new_users_count,
-        "new_deliveries_count": new_deliveries_count,
-        "total_customer_bookings": total_customer_bookings,
+        "new_users_count": len(new_users_list),
+        "new_deliveries_count": len(new_deliveries_list),
+        "total_customer_bookings": len(all_deliveries_list),
+        "new_users_list": new_users_list,
+        "new_deliveries_list": new_deliveries_list,
+        "all_deliveries_list": all_deliveries_list,
+        "customer_summary": customer_summary_list,
         "daywise_payments": daywise_payments_list,
         "daywise_bookings": daywise_bookings_list
     }
