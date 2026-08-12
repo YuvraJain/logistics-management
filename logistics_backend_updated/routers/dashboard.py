@@ -121,6 +121,8 @@ def get_overview_stats(db: Session = Depends(get_db)):
     customer_summary = {}
     for d in all_deliveries:
         cust = d.customer_name or d.sender_name or "Unknown Customer"
+        # Normalize the name to case-insensitive title case
+        cust = cust.strip().title()
         if cust not in customer_summary:
             customer_summary[cust] = {
                 "name": cust,
@@ -129,12 +131,8 @@ def get_overview_stats(db: Session = Depends(get_db)):
             }
         customer_summary[cust]["bookings_count"] += 1
         
-        # Calculate payment collected
-        payment_amount = 0.0
-        if d.payment_method == "COD":
-            payment_amount += (d.cod_amount or 0.0)
-        if d.payment_responsibility == "Receiver":
-            payment_amount += (d.delivery_charge or 0.0)
+        # Calculate payment collected (delivery charge + COD amount if any)
+        payment_amount = (d.delivery_charge or 0.0) + (d.cod_amount or 0.0)
         customer_summary[cust]["total_payment"] += payment_amount
 
     customer_summary_list = sorted(customer_summary.values(), key=lambda x: x["bookings_count"], reverse=True)
@@ -155,13 +153,8 @@ def get_overview_stats(db: Session = Depends(get_db)):
             if day_name in daywise_bookings:
                 daywise_bookings[day_name] += 1
                 
-                # Calculate actual payment collected (COD amount + delivery charge if Receiver Pays)
-                payment_amount = 0.0
-                if d.payment_method == "COD":
-                    payment_amount += (d.cod_amount or 0.0)
-                if d.payment_responsibility == "Receiver":
-                    payment_amount += (d.delivery_charge or 0.0)
-                
+                # Calculate actual payment collected (delivery charge + COD amount if any)
+                payment_amount = (d.delivery_charge or 0.0) + (d.cod_amount or 0.0)
                 daywise_payments[day_name] += payment_amount
 
     # Convert to list ordered from oldest day to today
