@@ -58,6 +58,130 @@ export class CreateDelivery {
     'West Bengal': ['Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri']
   };
 
+  defaultPincodes: Record<string, string> = {
+    'agra': '282001',
+    'ahmedabad': '380001',
+    'ajmer': '305001',
+    'ambala': '133001',
+    'amritsar': '143001',
+    'anantnag': '192101',
+    'asansol': '713301',
+    'aurangabad': '431001',
+    'bangalore': '560001',
+    'banglore': '560001',
+    'baramulla': '193101',
+    'bathinda': '151001',
+    'belagavi': '590001',
+    'bengaluru': '560001',
+    'bhagalpur': '812001',
+    'bhavnagar': '364001',
+    'bhilai': '490001',
+    'bhopal': '462001',
+    'bhubaneswar': '751001',
+    'bikaner': '334001',
+    'bilaspur': '495001',
+    'bokaro steel city': '827001',
+    'chennai': '600001',
+    'coimbatore': '641001',
+    'cuttack': '753001',
+    'darbhanga': '846001',
+    'delhi': '110001',
+    'deoghar': '814112',
+    'dharamsala': '176215',
+    'dharamshala': '176215',
+    'dhanbad': '826001',
+    'dibrugarh': '786001',
+    'durgapur': '713201',
+    'dwarka': '110075',
+    'faridabad': '121001',
+    'gaya': '823001',
+    'ghaziabad': '201001',
+    'goa': '403001',
+    'guntur': '522001',
+    'gurugram': '122001',
+    'guwahati': '781001',
+    'gwalior': '474001',
+    'howrah': '711101',
+    'hubballi': '580020',
+    'hyderabad': '500001',
+    'indore': '452001',
+    'jabalpur': '482001',
+    'jaipur': '302001',
+    'jalandhar': '144001',
+    'jammu': '180001',
+    'jamshedpur': '831001',
+    'jodhpur': '342001',
+    'jorhat': '785001',
+    'kamla nagar': '282005',
+    'kanpur': '208001',
+    'karimnagar': '505001',
+    'kathua': '184101',
+    'khammam': '507001',
+    'kochi': '682001',
+    'kolkata': '700001',
+    'kollam': '691001',
+    'korba': '495677',
+    'kota': '324001',
+    'kozhikode': '673001',
+    'lucknow': '226001',
+    'ludhiana': '141001',
+    'madurai': '625001',
+    'mangaluru': '575001',
+    'mapusa': '403507',
+    'margao': '403601',
+    'medical college': '282002',
+    'meerut': '250001',
+    'mumbai': '400001',
+    'mysuru': '570001',
+    'nagaon': '782001',
+    'nagpur': '440001',
+    'nashik': '422001',
+    'nellore': '524001',
+    'new delhi': '110001',
+    'nizamabad': '503001',
+    'noida': '201301',
+    'panaji': '403001',
+    'panipat': '132103',
+    'patiala': '147001',
+    'patna': '800001',
+    'ponda': '403401',
+    'pratap nagar': '282010',
+    'prayagraj': '211001',
+    'pune': '411001',
+    'puri': '752001',
+    'raipur': '492001',
+    'rajkot': '360001',
+    'rajnandgaon': '491441',
+    'ranchi': '834001',
+    'rohini': '110085',
+    'rourkela': '769001',
+    'salem': '636001',
+    'hybrid': '122001',
+    'sambalpur': '768001',
+    'shimla': '171001',
+    'silchar': '788001',
+    'siliguri': '734001',
+    'solan': '173212',
+    'srinagar': '190001',
+    'surat': '395003',
+    'thane': '400601',
+    'thiruvananthapuram': '695001',
+    'thrissur': '680001',
+    'tiruchirappalli': '620001',
+    'tirupati': '517501',
+    'udaipur': '313001',
+    'ujjain': '456001',
+    'una': '174303',
+    'vadodara': '390001',
+    'varanasi': '221001',
+    'vasant kunj': '110070',
+    'vasco da gama': '403802',
+    'vijayawada': '520001',
+    'visakhapatnam': '530001',
+    'warangal': '506001',
+    'yamunanagar': '135001'
+  };
+
   statesList: string[] = [];
 
   constructor(deliveryService: DeliveryService, router: Router) {
@@ -86,6 +210,34 @@ export class CreateDelivery {
     state: '',
     pincode: ''
   };
+
+  // Calculation variables
+  pkgLength: number | null = null;
+  pkgWidth: number | null = null;
+  pkgHeight: number | null = null;
+  deliveryDistance: number | null = null;
+  deliveryType: string = 'Standard';
+  paymentMethod: string = 'Prepaid';
+  paymentResponsibility: string = 'Sender';
+  isFragile: boolean = false;
+  declaredValue: number | null = null;
+  insuranceOptIn: boolean = false;
+  codAmount: number | null = null;
+  previousDeclaredValue: number | null = null;
+
+  // Real-time pricing results
+  calculatedVolumetricWeight = 0;
+  calculatedBillableWeight = 0;
+  baseWeightCharge = 0;
+  distanceCharge = 0;
+  serviceCharge = 0;
+  codCharge = 0;
+  fragileCharge = 0;
+  insuranceCharge = 0;
+  totalCharge = 0;
+
+  // Checkout modal
+  showCheckoutModal = false;
 
   form = {
     pickupAddress: '',
@@ -160,9 +312,12 @@ export class CreateDelivery {
     } else {
       this.form.specialHandling.push(value);
     }
+    if (value === 'Fragile') {
+      this.isFragile = this.form.specialHandling.includes('Fragile');
+      this.recalculatePrice();
+    }
   }
 
-  // Concatenate input fields to update the single pickup address string
   updatePickupAddress(): void {
     const parts = [
       this.pickup.line1,
@@ -174,7 +329,6 @@ export class CreateDelivery {
     this.form.pickupAddress = parts.join(', ');
   }
 
-  // Concatenate input fields to update the single delivery address string
   updateDeliveryAddress(): void {
     const parts = [
       this.delivery.line1,
@@ -184,6 +338,22 @@ export class CreateDelivery {
       this.delivery.pincode
     ].map(p => p?.trim()).filter(Boolean);
     this.form.deliveryAddress = parts.join(', ');
+  }
+
+  onPickupCityChange(): void {
+    const city = (this.pickup.city || '').trim().toLowerCase();
+    if (city && this.defaultPincodes[city]) {
+      this.pickup.pincode = this.defaultPincodes[city];
+    }
+    this.updatePickupAddress();
+  }
+
+  onDeliveryCityChange(): void {
+    const city = (this.delivery.city || '').trim().toLowerCase();
+    if (city && this.defaultPincodes[city]) {
+      this.delivery.pincode = this.defaultPincodes[city];
+    }
+    this.updateDeliveryAddress();
   }
 
   getPickupCities(): string[] {
@@ -283,7 +453,102 @@ export class CreateDelivery {
       this.formErrors.weight = 'Weight is required';
     }
 
+    if (this.pkgLength === null || this.pkgLength <= 0) {
+      this.formErrors.pkgLength = 'Length is required';
+    }
+    if (this.pkgWidth === null || this.pkgWidth <= 0) {
+      this.formErrors.pkgWidth = 'Width is required';
+    }
+    if (this.pkgHeight === null || this.pkgHeight <= 0) {
+      this.formErrors.pkgHeight = 'Height is required';
+    }
+    if (this.deliveryDistance === null || this.deliveryDistance <= 0) {
+      this.formErrors.deliveryDistance = 'Distance is required';
+    }
+    if (this.paymentMethod === 'COD' && (this.codAmount === null || this.codAmount <= 0)) {
+      this.formErrors.codAmount = 'COD amount is required';
+    }
+    if (this.insuranceOptIn && (this.declaredValue === null || this.declaredValue <= 0)) {
+      this.formErrors.declaredValue = 'Declared value is required';
+    }
+
     return Object.keys(this.formErrors).length === 0;
+  }
+
+  recalculatePrice(): void {
+    if (this.paymentMethod === 'COD') {
+      if (this.codAmount === null || this.codAmount === 0 || this.codAmount === this.previousDeclaredValue) {
+        this.codAmount = this.declaredValue;
+      }
+    }
+    this.previousDeclaredValue = this.declaredValue;
+
+    const weight = this.form.weight || 0;
+    const length = this.pkgLength || 0;
+    const width = this.pkgWidth || 0;
+    const height = this.pkgHeight || 0;
+    const distance = this.deliveryDistance || 0;
+    const declared = this.declaredValue || 0;
+    const orderValue = this.codAmount || 0;
+
+    // Step 2: Volumetric weight
+    const volWeight = (length * width * height) / 5000;
+    this.calculatedVolumetricWeight = Math.round(volWeight * 100) / 100;
+
+    // Step 3: Billable weight
+    let billWeight = Math.max(weight, volWeight);
+    billWeight = Math.ceil(billWeight * 2) / 2;
+    this.calculatedBillableWeight = billWeight;
+
+    // Step 4: Base weight charge
+    let base = 0;
+    if (billWeight <= 0.5) base = 50;
+    else if (billWeight <= 1.0) base = 60;
+    else if (billWeight <= 2.0) base = 75;
+    else if (billWeight <= 3.0) base = 90;
+    else if (billWeight <= 5.0) base = 120;
+    else if (billWeight <= 10.0) base = 180;
+    else if (billWeight <= 15.0) base = 240;
+    else if (billWeight <= 20.0) base = 300;
+    else if (billWeight <= 25.0) base = 360;
+    else base = 420;
+    this.baseWeightCharge = base;
+
+    // Step 5: Distance charge
+    let distChg = 0;
+    if (distance <= 5) distChg = 20;
+    else if (distance <= 10) distChg = 30;
+    else if (distance <= 20) distChg = 50;
+    else if (distance <= 50) distChg = 80;
+    else if (distance <= 100) distChg = 120;
+    else if (distance <= 250) distChg = 180;
+    else if (distance <= 500) distChg = 250;
+    else if (distance <= 1000) distChg = 350;
+    else distChg = 500;
+    this.distanceCharge = distChg;
+
+    // Step 6: Service charge
+    let svc = 0;
+    if (this.deliveryType === 'Next Day') svc = 75;
+    else if (this.deliveryType === 'Express') svc = 100;
+    else if (this.deliveryType === 'Same Day') svc = 150;
+    this.serviceCharge = svc;
+
+    // Step 7: COD charge
+    let cod = 0;
+    if (this.paymentMethod === 'COD') {
+      cod = Math.max(30, 0.02 * orderValue);
+    }
+    this.codCharge = cod;
+
+    // Step 8: Fragile charge
+    this.fragileCharge = this.isFragile ? 50 : 0;
+
+    // Step 9: Insurance charge
+    this.insuranceCharge = this.insuranceOptIn ? Math.round(0.01 * declared * 100) / 100 : 0;
+
+    // Step 10: Final Price
+    this.totalCharge = this.baseWeightCharge + this.distanceCharge + this.serviceCharge + this.codCharge + this.fragileCharge + this.insuranceCharge;
   }
 
   createOrder(): void {
@@ -292,10 +557,23 @@ export class CreateDelivery {
     this.updateDeliveryAddress();
 
     if (!this.validate()) {
-      this.submitError = 'Please fill in all required fields marked with * (including Package Type & Weight) and fix highlighted errors.';
+      this.submitError = 'Please fill in all required fields marked with * (including Dimensions & Distance) and fix highlighted errors.';
       return;
     }
 
+    if (this.paymentResponsibility === 'Sender' && this.paymentMethod === 'Prepaid') {
+      this.showCheckoutModal = true;
+    } else {
+      this.submitOrder('Unpaid');
+    }
+  }
+
+  payAndSubmit(): void {
+    this.showCheckoutModal = false;
+    this.submitOrder('Paid');
+  }
+
+  submitOrder(paymentStatus: string): void {
     const handlingNotes = this.form.specialHandling.length
       ? `Special Handling: ${this.form.specialHandling.join(', ')}. `
       : '';
@@ -306,7 +584,7 @@ export class CreateDelivery {
       customer_name: this.form.recipientName.trim(),
       customer_phone: this.form.recipientPhone.trim(),
       package_details: `${this.form.packageType} | ${this.form.weight}kg | ${this.form.packageDescription}`.trim(),
-      notes: `${handlingNotes}Priority: ${this.form.priority}. ${this.form.specialInstructions}`.trim(),
+      notes: `${handlingNotes}Priority: ${this.deliveryType}. Instructions: ${this.form.specialInstructions}`.trim(),
       agent: null,
       recipient_name: this.form.recipientName.trim(),
       recipient_address: this.delivery.line1.trim() + (this.delivery.line2 ? ', ' + this.delivery.line2.trim() : ''),
@@ -318,8 +596,23 @@ export class CreateDelivery {
       sender_phone: this.form.senderPhone.trim(),
       sender_email: this.form.senderEmail ? this.form.senderEmail.trim() : null,
       recipient_email: this.form.recipientEmail ? this.form.recipientEmail.trim() : null,
+      payment_method: this.paymentMethod,
+      payment_responsibility: this.paymentResponsibility,
+      payment_status: paymentStatus,
+      delivery_charge: this.totalCharge,
+      cod_amount: this.paymentMethod === 'COD' ? (this.codAmount || 0) : 0,
+      pkg_length: this.pkgLength || 0,
+      pkg_width: this.pkgWidth || 0,
+      pkg_height: this.pkgHeight || 0,
+      delivery_distance: this.deliveryDistance || 0,
+      is_fragile: this.isFragile,
+      declared_value: this.declaredValue || 0,
+      insurance_opt_in: this.insuranceOptIn,
+      package_description: this.form.packageType,
+      package_weight: String(this.form.weight),
+      package_dimensions: `${this.pkgLength}x${this.pkgWidth}x${this.pkgHeight}`,
+      priority: this.deliveryType
     };
-
 
     this.deliveryService.createDelivery(payload).subscribe({
       next: () => {
@@ -327,8 +620,8 @@ export class CreateDelivery {
       },
       error: (err) => {
         console.error('Error creating delivery order', err);
-        this.submitError = typeof err?.error?.detail === 'string' 
-          ? err.error.detail 
+        this.submitError = typeof err?.error?.detail === 'string'
+          ? err.error.detail
           : (Array.isArray(err?.error?.detail) ? err.error.detail.map((d: any) => d.msg).join(', ') : 'Failed to create delivery order. Please check all fields.');
       }
     });
@@ -370,5 +663,28 @@ export class CreateDelivery {
       state: '',
       pincode: ''
     };
+
+    this.pkgLength = null;
+    this.pkgWidth = null;
+    this.pkgHeight = null;
+    this.deliveryDistance = null;
+    this.deliveryType = 'Standard';
+    this.paymentMethod = 'Prepaid';
+    this.paymentResponsibility = 'Sender';
+    this.isFragile = false;
+    this.declaredValue = null;
+    this.insuranceOptIn = false;
+    this.codAmount = null;
+    this.previousDeclaredValue = null;
+
+    this.calculatedVolumetricWeight = 0;
+    this.calculatedBillableWeight = 0;
+    this.baseWeightCharge = 0;
+    this.distanceCharge = 0;
+    this.serviceCharge = 0;
+    this.codCharge = 0;
+    this.fragileCharge = 0;
+    this.insuranceCharge = 0;
+    this.totalCharge = 0;
   }
 }

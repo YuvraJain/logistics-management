@@ -36,6 +36,21 @@ export interface DeliveryCreate {
   arrived_destination_at?: string | null;
   out_for_delivery_at?: string | null;
   delivered_at?: string | null;
+
+  package_description?: string | null;
+  package_weight?: string | null;
+  package_dimensions?: string | null;
+  priority?: string | null;
+  payment_responsibility?: string | null;
+  delivery_charge?: number | null;
+  cod_amount?: number | null;
+  pkg_length?: number | null;
+  pkg_width?: number | null;
+  pkg_height?: number | null;
+  delivery_distance?: number | null;
+  is_fragile?: boolean | null;
+  declared_value?: number | null;
+  insurance_opt_in?: boolean | null;
 }
 
 export interface DeliveryResponse {
