@@ -31,19 +31,19 @@ export class Dashboard implements OnInit {
   // Date Picker States
   showDatePicker = signal(false);
 
-  // Default range matches mockup: May 14 to May 20, 2024
+  // Default range: Last 7 Days dynamically
   selectedRange = signal<{ start: Date; end: Date }>({
-    start: new Date(2024, 4, 14),
-    end: new Date(2024, 4, 20),
+    start: (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0,0,0,0); return d; })(),
+    end: (() => { const d = new Date(); d.setHours(23,59,59,999); return d; })()
   });
 
   tempRange = signal<{ start: Date; end: Date | null }>({
-    start: new Date(2024, 4, 14),
-    end: new Date(2024, 4, 20),
+    start: (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0,0,0,0); return d; })(),
+    end: (() => { const d = new Date(); d.setHours(23,59,59,999); return d; })()
   });
 
   activeQuickSelect = signal<string>('Last 7 Days');
-  currentCalendarMonth = signal<Date>(new Date(2024, 4, 1)); // May 2024
+  currentCalendarMonth = signal<Date>(new Date()); // Dynamic current month
   hoveredDate = signal<Date | null>(null);
 
   quickSelectOptions = [
