@@ -421,12 +421,7 @@ export class Dashboard implements OnInit {
 
     let totalRevenue = 0;
     for (const d of deliveries) {
-      if (d.payment_method === 'COD') {
-        totalRevenue += (d.cod_amount || 0);
-      }
-      if (d.payment_responsibility === 'Receiver') {
-        totalRevenue += (d.delivery_charge || 0);
-      }
+      totalRevenue += (d.delivery_charge || 0) + (d.cod_amount || 0);
     }
 
     // Top Cards
